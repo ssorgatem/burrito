@@ -30,25 +30,28 @@ def which(executable_name, env_var='PATH'):
     or if ``env_var`` is not set. Otherwise will return the first match in
     ``env_var``.
 
-    Note: this function will likely not work on Windows.
-
     Code taken and modified from:
         http://www.velocityreviews.com/forums/
         t689526-python-library-call-equivalent-to-which-command.html
 
+        http://stackoverflow.com/a/379535
     """
     exec_fp = None
 
+    def is_exe(fpath):
+        return os.path.exists(fpath) and os.access(fpath, os.X_OK)
+
+    def ext_candidates(fpath):
+        yield fpath
+        for ext in os.environ.get("PATHEXT", "").split(os.pathsep):
+            yield fpath + ext
+
     if env_var in os.environ:
-        paths = os.environ[env_var]
-
-        for path in paths.split(os.pathsep):
-            curr_exec_fp = os.path.join(path, executable_name)
-
-            if os.access(curr_exec_fp, os.X_OK):
-                exec_fp = curr_exec_fp
-                break
-
+        for path in os.environ.get(env_var, "").split(os.pathsep):
+            for curr_exec_fp in ext_candidates(os.path.join(path, executable_name)):
+                if is_exe(curr_exec_fp):
+                    exec_fp = curr_exec_fp
+                    break
     return exec_fp
 
 
